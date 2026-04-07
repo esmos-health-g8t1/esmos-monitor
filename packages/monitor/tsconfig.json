@@ -29,6 +29,6 @@
 
     "baseUrl": "."
   },
-  "include": ["server", "server/tests"],
+  "include": ["src", "src/tests", "src/env.ts", "src/services", "src/lib"],
   "exclude": ["build"]
 }

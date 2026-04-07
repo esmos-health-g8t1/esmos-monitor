@@ -1,0 +1,25 @@
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 120,
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSpacing": true,
+  "arrowParens": "avoid",
+  "endOfLine": "lf",
+  "plugins": ["@oxlint/oxfmt"],
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "build",
+    ".next",
+    "out",
+    "coverage",
+    ".env",
+    ".env.local",
+    ".env.development.local",
+    ".env.test.local",
+    ".env.production.local"
+  ]
+}

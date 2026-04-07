@@ -12,7 +12,7 @@ import ansiRegex from 'ansi-regex';
 export default async function logAndReportError(
   testInfo: TestInfo,
   screenshotBuffer: Buffer,
-  explicitError?: Error,
+  explicitError?: Error
 ): Promise<void> {
   const Sentry = initSentry();
 

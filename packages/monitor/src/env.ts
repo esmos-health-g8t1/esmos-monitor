@@ -15,6 +15,5 @@ export const env = createEnv({
     SUPABASE_SECRET_KEY: z.string(),
   },
   runtimeEnv: process.env,
-  skipValidation:
-    !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
+  skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
 });

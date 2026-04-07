@@ -27,21 +27,11 @@ test.describe('Shop Page', () => {
     await expect(page.getByRole('button', { name: 'Featured' })).toBeVisible();
     await page.getByRole('button', { name: 'Featured' }).click();
 
-    await expect(
-      page.getByRole('menuitem', { name: 'Featured' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('menuitem', { name: 'Newest Arrivals' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('menuitem', { name: 'Name (A-Z)' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('menuitem', { name: 'Price - Low to High' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('menuitem', { name: 'Price - High to Low' }),
-    ).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Featured' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Newest Arrivals' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Name (A-Z)' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Price - Low to High' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Price - High to Low' })).toBeVisible();
   });
 
   test('should display product grid', async ({ page }) => {
@@ -76,9 +66,7 @@ test.describe('Shop Page', () => {
     }
   });
 
-  test('should display correct product details for all items', async ({
-    page,
-  }) => {
+  test('should display correct product details for all items', async ({ page }) => {
     const products = [
       { name: 'Low Carb meal plan', price: '50.00' },
       { name: 'Weight Loss Wonders', price: '47.00' },
@@ -98,15 +86,10 @@ test.describe('Shop Page', () => {
     for (const product of products) {
       await page.goto('/shop');
 
-      await page
-        .getByRole('heading', { name: product.name, exact: true })
-        .getByRole('link')
-        .click();
+      await page.getByRole('heading', { name: product.name, exact: true }).getByRole('link').click();
 
       // product name
-      await expect(
-        page.getByRole('heading', { name: product.name }),
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: product.name })).toBeVisible();
 
       // product price
       await expect(page.getByText('$').first()).toBeVisible();
@@ -163,37 +146,19 @@ test.describe('Shop Page', () => {
 
     // payment
     await expect(page.locator('#shipping_and_billing')).toContainText(
-      '10 Bayfront Avenue, Presidential Suite, Singapore 100000, Singapore',
+      '10 Bayfront Avenue, Presidential Suite, Singapore 100000, Singapore'
     );
-    await page
-      .getByRole('textbox', { name: 'Payment Details (test data)' })
-      .fill('8989 8989 8989 8989');
-    await page
-      .getByRole('checkbox', { name: 'Save my payment details' })
-      .check();
-    await page
-      .getByRole('button', { name: 'Order summary 3  item(s) -  $' })
-      .click();
-    await expect(
-      page.getByRole('img', { name: 'Meal Prep Made Simple' }),
-    ).toBeVisible();
-    await expect(page.locator('#cart_products')).toContainText(
-      '1 x Meal Prep Made Simple',
-    );
+    await page.getByRole('textbox', { name: 'Payment Details (test data)' }).fill('8989 8989 8989 8989');
+    await page.getByRole('checkbox', { name: 'Save my payment details' }).check();
+    await page.getByRole('button', { name: 'Order summary 3  item(s) -  $' }).click();
+    await expect(page.getByRole('img', { name: 'Meal Prep Made Simple' })).toBeVisible();
+    await expect(page.locator('#cart_products')).toContainText('1 x Meal Prep Made Simple');
     await expect(page.locator('#cart_products')).toContainText('$ 39.00');
-    await expect(
-      page.getByRole('img', { name: 'Office Lunch Box' }),
-    ).toBeVisible();
-    await expect(page.locator('#cart_products')).toContainText(
-      '1 x Office Lunch Box',
-    );
+    await expect(page.getByRole('img', { name: 'Office Lunch Box' })).toBeVisible();
+    await expect(page.locator('#cart_products')).toContainText('1 x Office Lunch Box');
     await expect(page.locator('#cart_products')).toContainText('$ 70.00');
-    await expect(
-      page.getByRole('img', { name: "Athlete's Power Pack" }),
-    ).toBeVisible();
-    await expect(page.locator('#cart_products')).toContainText(
-      "1 x Athlete's Power Pack",
-    );
+    await expect(page.getByRole('img', { name: "Athlete's Power Pack" })).toBeVisible();
+    await expect(page.locator('#cart_products')).toContainText("1 x Athlete's Power Pack");
     await expect(page.locator('#cart_products')).toContainText('$ 49.00');
     await expect(page.locator('#order_total')).toContainText('$ 181.70');
     await page.getByRole('button', { name: 'Pay now' }).click();

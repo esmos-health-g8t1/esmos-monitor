@@ -1,8 +1,6 @@
-# 🛡️ ESMOS Monitor
+# 🛡️ Package: ESMOS Monitor
 
-> End-to-end UI monitoring for the [Everyday Sustainable Meals Ordering System (ESMOS)](http://prod-v3.eastasia.cloudapp.azure.com:8069/) platform, powered by Playwright and deployed as an Azure Container App Job.
-
-[![Deploy](https://github.com/zek01svg/esmos-monitor/actions/workflows/aca-deploy.yml/badge.svg)](https://github.com/zek01svg/esmos-monitor/actions/workflows/aca-deploy.yml)
+> Playwright-powered E2E test suite for the [ESMOS](http://prod-v3.eastasia.cloudapp.azure.com:8069/) platform, deployed as an Azure Container App Job.
 
 ## 💡 Why This Exists
 
@@ -16,35 +14,25 @@ ESMOS Monitor fills that gap by running headless Playwright tests against the pr
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────┐
-│        Azure Function (Timer)       │  ← Runs every 10 min
-│  Checks VM status via Azure SDK     │
-└──────────────┬──────────────────────┘
-               │ VM is Running?
-               ▼
-┌─────────────────────────────────────┐
-│     Azure Container App Job         │  ← On-demand execution
-│  ┌───────────────────────────────┐  │
-│  │  Playwright E2E Test Suite    │  │
-│  │  (Chromium · 4 workers)       │  │
-│  └──────────┬────────────────────┘  │
-│             │ on failure            │
-│  ┌──────────▼────────────────────┐  │
-│  │  report-error service         │  │
-│  │  ├─ Sentry → Better Stack     │  │
-│  │  ├─ Pino   → Better Stack     │  │
-│  │  └─ Screenshot → Supabase     │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Azure Function Timer] -->|Runs every 10 min| B[Check VM status via Azure SDK]
+    B -->|VM is Running?| C[Azure Container App Job]
+    subgraph "Azure Container App Job (On-demand execution)"
+        C --> D[Playwright E2E Test Suite]
+        D -->|on failure| E[report-error service]
+        E --> F[Sentry → Better Stack]
+        E --> G[Pino → Better Stack]
+        E --> H[Screenshot → Supabase]
+    end
 ```
 
 The scheduling and execution layers are intentionally **decoupled**:
 
-| Layer         | Component               | Purpose                                                                                |
-| ------------- | ----------------------- | -------------------------------------------------------------------------------------- |
-| **Trigger**   | Azure Function (Timer)  | Checks if the target VM is running before triggering the job, avoiding wasted compute. |
-| **Execution** | Azure Container App Job | Runs the Playwright test suite inside a container. No environment checks—just tests.   |
+| Layer         | Component          | Purpose                                                                                |
+| ------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| **Trigger**   | `packages/trigger` | Checks if the target VM is running before triggering the job, avoiding wasted compute. |
+| **Execution** | `packages/monitor` | Runs the Playwright test suite inside a container. No environment checks—just tests.   |
 
 ## 🛠️ Tech Stack
 
@@ -70,15 +58,13 @@ The scheduling and execution layers are intentionally **decoupled**:
 | [pnpm](https://pnpm.io/)          | `>= 10.20.0`                       |
 | [Docker](https://www.docker.com/) | Latest (for container builds only) |
 
-### 📦 Installation
+### 📦 Setup
+
+This package is part of the [ESMOS Monitoring Monorepo](../../README.md).
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd esmos-monitor
-
-# Install dependencies
-pnpm install --frozen-lockfile
+# From the monorepo root
+pnpm install
 ```
 
 ### ⚙️ Configuration
@@ -109,7 +95,11 @@ cp .env.example .env
 **Run tests locally** (loads env from `.env.production` via `dotenv-cli`):
 
 ```bash
+# From this directory
 pnpm run test:dev
+
+# Or from the root
+pnpm --filter esmos-monitor test:dev
 ```
 
 **Build and run via Docker** (mirrors production):
@@ -143,27 +133,27 @@ All E2E tests live in [`server/tests/e2e/`](server/tests/e2e/) and target the pr
 
 When a test fails, the [`report-error`](server/services/report-error.ts) service orchestrates a three-pronged response:
 
-```
-Test Failure
-    ├── Sentry SDK ──────────► Better Stack Errors  (error + test metadata)
-    ├── Pino logger ─────────► Better Stack Logs    (structured error context)
-    └── Supabase upload ─────► Supabase Storage     (timestamped screenshot)
+```mermaid
+graph LR
+    A[Test Failure] --> B[Sentry SDK]
+    A --> C[Pino logger]
+    A --> D[Supabase upload]
+    B --> E[Better Stack Errors]
+    C --> F[Better Stack Logs]
+    D --> G[Supabase Storage]
 ```
 
 Each failure record includes the test title, status, duration, retry count, annotations, sanitized error message, and stack trace (with ANSI codes stripped for readability).
 
 ## 🔄 CI/CD
 
-The GitHub Actions workflow ([`.github/workflows/aca-deploy.yml`](.github/workflows/aca-deploy.yml)) automates deployment on every push to `main`:
+The GitHub Actions workflow ([`.github/workflows/monitor-deploy.yml`](../../.github/workflows/monitor-deploy.yml)) automates deployment on every push to `main`:
 
-```
-Push to main
-    │
-    ▼
-┌────────────────────┐    ┌──────────────────────┐    ┌─────────────────────────┐
-│  Build Docker image│ ──►│  Push to ACR         │──► │  Update Container App   │
-│                    │    │  :latest + :sha      │    │  Job with new image     │
-└────────────────────┘    └──────────────────────┘    └─────────────────────────┘
+```mermaid
+graph LR
+    A[Push to main] --> B[Build Docker image]
+    B --> C[Push to ACR]
+    C --> D[Update Container App Job]
 ```
 
 | Step       | Detail                                                                  |

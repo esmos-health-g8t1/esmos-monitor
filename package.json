@@ -1,0 +1,19 @@
+{
+  "name": "esmos-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ESMOS Monitoring Monorepo",
+  "scripts": {
+    "lint": "pnpm -r exec oxlint --fix",
+    "format": "pnpm -r exec oxfmt --write",
+    "clean": "pnpm -r run clean"
+  },
+  "devDependencies": {
+    "lint-staged": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@10.32.0"
+}

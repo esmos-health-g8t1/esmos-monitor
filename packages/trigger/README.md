@@ -1,8 +1,6 @@
-# ⏱️ ESMOS Monitor Trigger
+# ⏱️ Package: ESMOS Monitor Trigger
 
-> Azure Function (Timer Trigger) that conditionally starts the [ESMOS Monitor](https://github.com/zek01svg/esmos-monitor) Container App Job based on the production VM's power state—ensuring tests only run when the environment is live.
-
-[![Deploy](https://github.com/zek01svg/esmos-monitor-trigger/actions/workflows/deploy.yml/badge.svg)](https://github.com/zek01svg/esmos-monitor-trigger/actions/workflows/deploy.yml)
+> Azure Function (Timer Trigger) that conditionally starts the [ESMOS Monitor](../monitor) Container App Job based on the production VM's power state.
 
 ## 💡 Why This Exists
 
@@ -19,39 +17,20 @@ This keeps the scheduling and execution layers **fully decoupled**—the Functio
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────┐
-│       Azure Function (Timer)        │  ← Fires every 10 min
-│  ┌───────────────────────────────┐  │
-│  │  1. Check VM power state      │  │
-│  │     (Azure Compute SDK)       │  │
-│  └──────────┬────────────────────┘  │
-│             │ PowerState/running?   │
-│             ▼                       │
-│  ┌───────────────────────────────┐  │
-│  │  2. Check site HTTP status    │  │
-│  └──────────┬────────────────────┘  │
-│             │ Site is reachable?    │
-│             ▼                       │
-│  ┌───────────────────────────────┐  │
-│  │  3. Start Container App Job   │  │
-│  │     (Azure Container Apps SDK)│  │
-│  └───────────────────────────────┘  │
-└──────────────┬──────────────────────┘
-               │ on success
-               ▼
-┌─────────────────────────────────────┐
-│    Azure Container App Job          │  ← ESMOS Monitor (separate repo)
-│    Playwright E2E Test Suite        │
-└─────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Azure Function Timer] -->|Fires every 10 min| B[1. Check VM power state]
+    B -->|PowerState/running?| C[2. Check site HTTP status]
+    C -->|Site is reachable?| D[3. Start Container App Job]
+    D -->|on success| E[Azure Container App Job]
 ```
 
 The two components are owned by separate repositories and deployed independently:
 
-| Layer         | Component               | Repository                                                                        | Purpose                                                                          |
-| ------------- | ----------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Trigger**   | Azure Function (Timer)  | [esmos-monitor-trigger](https://github.com/zek01svg/esmos-monitor-trigger) ← this | Checks VM status and site health, conditionally starts the job. No test logic.   |
-| **Execution** | Azure Container App Job | [esmos-monitor](https://github.com/zek01svg/esmos-monitor)                        | Runs Playwright tests, reports errors, uploads screenshots. No scheduling logic. |
+| Layer         | Component          | Repository | Purpose                                                                          |
+| ------------- | ------------------ | ---------- | -------------------------------------------------------------------------------- |
+| **Trigger**   | `packages/trigger` | This       | Checks VM status and site health, conditionally starts the job. No test logic.   |
+| **Execution** | `packages/monitor` | Monitor    | Runs Playwright tests, reports errors, uploads screenshots. No scheduling logic. |
 
 ## 🛠️ Tech Stack
 
@@ -77,15 +56,13 @@ The two components are owned by separate repositories and deployed independently
 | [Azure Functions Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) | `v4`         |
 | [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/)                                                 | Latest       |
 
-### 📦 Installation
+### 📦 Setup
+
+This package is part of the [ESMOS Monitoring Monorepo](../../README.md).
 
 ```bash
-# Clone the repository
-git clone https://github.com/zek01svg/esmos-monitor-trigger.git
-cd esmos-monitor-trigger
-
-# Install dependencies
-pnpm install --frozen-lockfile
+# From the monorepo root
+pnpm install
 ```
 
 ### ⚙️ Configuration
@@ -123,11 +100,13 @@ Configure `local.settings.json` with the required values:
 **Run locally** with Azure Functions Core Tools:
 
 ```bash
-# Build TypeScript
+# From this directory
 pnpm run build
-
-# Start the Function runtime
 pnpm run start
+
+# Or from root
+pnpm --filter esmos-monitor-trigger build
+pnpm --filter esmos-monitor-trigger start
 ```
 
 The timer trigger fires every 10 minutes. For local testing, the function is also invocable via an HTTP `POST` to the admin endpoint:
@@ -155,16 +134,13 @@ Both channels share the same Better Stack workspace as the [ESMOS Monitor](https
 
 ## 🔄 CI/CD
 
-The GitHub Actions workflow ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) automates deployment on every push to `main`:
+The GitHub Actions workflow ([`.github/workflows/trigger-deploy.yml`](../../.github/workflows/trigger-deploy.yml)) automates deployment on every push to `main`:
 
-```
-Push to main
-    │
-    ▼
-┌────────────────────┐    ┌──────────────────────┐    ┌──────────────────────────┐
-│  Install & Build   │──► │     Zip deployment   │──► │  Deploy to Azure Function│
-│                    │    │        artifact      │    │  App (Production slot)   │
-└────────────────────┘    └──────────────────────┘    └──────────────────────────┘
+```mermaid
+graph LR
+    A[Push to main] --> B[Install & Build]
+    B --> C[Zip deployment artifact]
+    C --> D[Deploy to Azure Function App]
 ```
 
 | Step        | Detail                                                                                             |
